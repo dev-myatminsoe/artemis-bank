@@ -107,6 +107,7 @@
             bind:value={name}
         />
         <button
+            type='button'
             on:click={formDecrement}
             class="bg-blue-500 text-white hover:bg-blue-700 px-4 rounded"
             >-</button
@@ -116,11 +117,13 @@
             bind:value={amount}
         />
         <button
+            type='button'
             on:click={formIncrement}
             class="bg-blue-500 text-white hover:bg-blue-700 px-4 rounded"
             >+</button
         >
         <button
+            type='button'
             on:click={save}
             class="bg-green-500 rounded px-5 text-white hover:bg-green-700"
         >
