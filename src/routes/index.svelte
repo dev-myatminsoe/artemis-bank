@@ -1,146 +1,95 @@
 <script>
-    import { onMount } from "svelte";
-    import { prevent_default } from "svelte/internal";
+  import { createEventDispatcher } from "svelte";
+  import Record from "./record.svelte";
+  import Modal from "../components/Modal.svelte";
 
-    /**
-     * @type {any[]}
-     */
-    let items = [];
+  const dispatch = createEventDispatcher();
 
-    let name = "";
-    let amount = 200;
+  let visible = false;
+  let prefix = "artemis";
+  let current_date = null;
+  let current_game = "";
+  let show_dialog = false;
+  let key_current_game = prefix + "_current_game";
+  /**
+   * @type {any[]}
+   */
+  let items = [];
 
-    function formDecrement() {
-        amount -= 100;
+  function on_new_button_click() {
+    show_dialog = true;
+  }
+
+  function start_new_game() {
+    current_date = new Date();
+    current_game = prefix + "_" + current_date.toISOString();
+    items = [];
+    localStorage.setItem(key_current_game, current_game);
+    localStorage.setItem(current_game, JSON.stringify(items));
+    visible = true;
+  }
+
+  function game_over() {
+    localStorage.setItem(key_current_game, "");
+    visible = false;
+  }
+
+  function load_recent_game() {
+    current_game = localStorage.getItem(key_current_game) || "";
+
+    if (!current_game) {
+      let collector = [];
+      for (var key in localStorage) {
+        if (key.startsWith(prefix) && key != key_current_game) {
+          let tmp_key = key.replace(prefix, "");
+          collector.push(tmp_key);
+        }
+      }
+      if (collector.length > 0) {
+        let reversed = collector.sort().reverse();
+        current_game = prefix + reversed[0];
+      }
     }
 
-    function formIncrement() {
-        amount += 100;
+    if (current_game) {
+      items = JSON.parse(localStorage.getItem(current_game) || "[]");
+      visible = true;
     }
-
-    onMount(() => {
-        items = JSON.parse(localStorage.getItem("items") || "[]");
-    });
-
-    function save() {
-        let item = {
-            id: Date.now(),
-            name: name,
-            amount: amount,
-        };
-        items = [...items, item];
-        name = "";
-        amount = 200;
-        saveToLocal();
-    }
-
-    function del(id) {
-        items = items.filter((item) => item.id !== id);
-        saveToLocal();
-    }
-
-    function saveToLocal() {
-        localStorage.setItem("items", JSON.stringify(items));
-    }
+  }
 </script>
 
-<div class="grid m-2 items-center gap-2">
-    {#each items as item}
-        <div class="flex gap-1">
-            <input
-                type="text"
-                class="bg-gray-100 rounded p-1 w-full"
-                bind:value={item.name}
-                on:change={saveToLocal}
-            />
-            <button
-                on:click={() => {
-                    item.amount -= 100;
-                    saveToLocal();
-                }}
-                class="bg-blue-500 text-white hover:bg-blue-700 px-4 rounded"
-                >-</button
-            >
-            <input
-                class="bg-gray-100 rounded w-16 text-center text-sm"
-                type="number"
-                bind:value={item.amount}
-            />
-            <button
-                on:click={() => {
-                    item.amount += 100;
-                    saveToLocal();
-                }}
-                class="bg-blue-500 text-white hover:bg-blue-700 px-4 rounded"
-                >+</button
-            >
-            <button
-                on:click={() => {
-                    del(item.id);
-                }}
-                class="bg-red-500 text-white rounded hover:bg-red-700 px-5"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                </svg>
-            </button>
-        </div>
-    {/each}
+<div class="flex flex-row p-2">
+  <div class="flex flex-col sm:flex-row w-full">
+    <button
+      class="w-full sm:w-max bg-blue-500 text-white hover:bg-blue-700 rounded p-2 px-5 my-1 sm:mx-1"
+      on:click={on_new_button_click}
+    >
+      New Game
+    </button>
 
-    <hr class="mt-4" />
+    <button
+      class="w-full sm:w-max bg-blue-500 text-white hover:bg-blue-700 rounded p-2 px-5 my-1 sm:mx-1"
+      on:click={game_over}>Game over</button
+    >
 
-    <form on:submit|preventDefault={save} class="flex gap-1">
-        <input
-            type="text"
-            class="bg-gray-100 rounded p-1 w-full"
-            bind:value={name}
-        />
-        <button
-            type='button'
-            on:click={formDecrement}
-            class="bg-blue-500 text-white hover:bg-blue-700 px-4 rounded"
-            >-</button
-        >
-        <input
-            class="bg-gray-100 rounded p-1 w-16 text-center text-sm"
-            bind:value={amount}
-        />
-        <button
-            type='button'
-            on:click={formIncrement}
-            class="bg-blue-500 text-white hover:bg-blue-700 px-4 rounded"
-            >+</button
-        >
-        <button
-            type='button'
-            on:click={save}
-            class="bg-green-500 rounded px-5 text-white hover:bg-green-700"
-        >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-            </svg>
-        </button>
-    </form>
+    <button
+      class="w-full sm:w-max bg-blue-500 text-white hover:bg-blue-700 rounded p-2 px-5 my-1 sm:mx-1"
+      on:click={load_recent_game}>Load recent game</button
+    >
+  </div>
 </div>
+
+{#if show_dialog}
+  <Modal
+    on:dialog_yes={() => {
+      show_dialog = false;
+      start_new_game();
+    }}
+    on:dialog_no={() => (show_dialog = false)}
+    >Are you sure to start a new game?</Modal
+  >
+{/if}
+
+{#if visible}
+  <Record {items} {current_game} />
+{/if}
